@@ -214,3 +214,16 @@ La lógica de precios vive en `src/logic/` (importar desde `@/logic`). Son funci
   - Todos los niveles de la estimación exigen la misma etiqueta madre; el nivel "sitio" además exige compartir una etiqueta de sitio.
   - Los precios del historial de otra base (kilo o unidad) no se mezclan.
 - **Formato de fechas:** las funciones exigen fechas `AAAA-MM-DD` válidas (como las que guarda la Fase 2) e instantes ISO 8601; rechazan años 0000 a 0099, igual que la capa de datos.
+
+---
+
+## Notas de ejecución de la Fase 4a para la 4b
+
+- **Los datos extra viven solo en el código.** La base guarda nombre, unidad y precio. Los sinónimos (`aliases`), la categoría, las estaciones, la fuente del precio y la nota (por ejemplo "paquete de 400 g") están en `src/db/seedData/`. La búsqueda de la 4b debe importar `ALL_SEED_ITEMS` y armar el mapa de sinónimos por nombre normalizado; los ítems creados por el usuario no tienen sinónimos.
+- **Falta `listCatalogItems(db)`** (leer todo el catálogo para buscar en memoria); con unos 165 ítems es suficiente filtrar en memoria en cada tecla.
+- **110 de 165 precios son estimados.** Si la pantalla quiere avisar "precio estimado", la base no sabe qué ítems cambió el usuario: habría que guardar esa marca (por ejemplo, una columna nueva con migración, y reiniciar Metro con `--clear` al agregarla) o aceptar que el aviso se base solo en los datos de código.
+- **Qué significa el precio:** por kilo para unidades por kilo y, para `unit`, el precio de UNA unidad típica (un huevo, un atado, un paquete del tamaño de la nota). Merkén y orégano van por bolsa.
+- **La carga repone los ítems iniciales por nombre en cada arranque.** Si la 4b o una fase posterior agrega borrar o renombrar ítems, un ítem inicial borrado reaparecería y uno renombrado se duplicaría: habría que registrar qué se cargó (versión de datos) antes de agregar esa función. Está advertido en el comentario de `seedCatalog.ts`.
+- **Si la carga falla** (por ejemplo, una base dañada), la app muestra la pantalla de error en cada arranque, sin botón de reintentar ni modo reducido.
+- **Los precios son una foto de noviembre de 2026.** La carga nunca actualiza el precio de un ítem ya existente: versiones futuras solo pueden agregar ítems nuevos. Convendría ofrecer "restaurar el precio inicial" en la pantalla de edición.
+- **Ítems que faltan** (quesillo, pavo, pescado, comino, pimienta y otros) se pueden agregar cuando haya un precio con fuente, cuidando que la cobertura de supermercado se mantenga en al menos 30%.

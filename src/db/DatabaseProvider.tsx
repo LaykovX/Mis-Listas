@@ -10,6 +10,7 @@ import { t } from '@/strings';
 import migrations from '../../drizzle/migrations';
 import { openDatabase } from './client';
 import { ensureDefaultTags } from './seed';
+import { ensureCatalogSeed } from './seedCatalog';
 import type * as schema from './schema';
 import type { Db } from './types';
 
@@ -56,9 +57,10 @@ function MigratedDatabase({ db, children }: { db: DatabaseConnection; children: 
     if (!success || seeded) return;
     try {
       ensureDefaultTags(db);
+      ensureCatalogSeed(db);
       setSeeded(true);
     } catch (e) {
-      console.error('No se pudieron crear las etiquetas iniciales', e);
+      console.error('No se pudieron crear los datos iniciales', e);
       setSeedFailed(true);
     }
   }, [success, seeded, db]);

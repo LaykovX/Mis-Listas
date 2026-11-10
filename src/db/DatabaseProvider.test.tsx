@@ -8,10 +8,17 @@ import { PaperProvider } from 'react-native-paper';
 import { t } from '@/strings';
 
 import { DatabaseProvider, useDb, type DatabaseConnection } from './DatabaseProvider';
+import { getDatabaseStats } from './repositories';
 import * as schema from './schema';
+import * as seedCatalogModule from './seedCatalog';
+import { ALL_SEED_ITEMS } from './seedData';
 import { createTestDb, type TestDb } from './testing/createTestDb';
 
 jest.mock('drizzle-orm/expo-sqlite/migrator', () => ({ useMigrations: jest.fn() }));
+jest.mock('./seedCatalog', () => {
+  const actual = jest.requireActual('./seedCatalog');
+  return { ...actual, ensureCatalogSeed: jest.fn(actual.ensureCatalogSeed) };
+});
 jest.mock('../../drizzle/migrations', () => ({ __esModule: true, default: { journal: { entries: [] }, migrations: {} } }));
 
 const mockUseMigrations = useMigrations as jest.Mock;
@@ -114,5 +121,46 @@ describe('DatabaseProvider', () => {
       return null;
     }
     await expect(render(<Orphan />)).rejects.toThrow(/DatabaseProvider/);
+  });
+});
+
+describe('DatabaseProvider: catálogo inicial (REQ-04.1)', () => {
+  function CatalogProbe() {
+    const db = useDb();
+    return <Text testID="catalog-probe">{`ítems: ${getDatabaseStats(db).catalogItemCount}`}</Text>;
+  }
+
+  const renderWithCatalogProbe = () =>
+    render(
+      <PaperProvider>
+        <DatabaseProvider openDb={asConnection}>
+          <CatalogProbe />
+        </DatabaseProvider>
+      </PaperProvider>,
+    );
+
+  it('carga el catálogo inicial antes de mostrar las pantallas', async () => {
+    mockUseMigrations.mockReturnValue({ success: true, error: undefined });
+    await renderWithCatalogProbe();
+    expect(await screen.findByText(`ítems: ${ALL_SEED_ITEMS.length}`)).toBeTruthy();
+  });
+
+  it('si la base ya tenía el catálogo (la app se abre otra vez), no lo duplica', async () => {
+    // Simula un arranque anterior: la base ya trae todos los ítems iniciales.
+    const { ensureCatalogSeed: realSeed } = jest.requireActual('./seedCatalog') as typeof seedCatalogModule;
+    realSeed(testDb.db);
+    mockUseMigrations.mockReturnValue({ success: true, error: undefined });
+    await renderWithCatalogProbe();
+    expect(await screen.findByText(`ítems: ${ALL_SEED_ITEMS.length}`)).toBeTruthy();
+  });
+
+  it('si falla la carga del catálogo muestra la pantalla de error y no las pantallas', async () => {
+    mockUseMigrations.mockReturnValue({ success: true, error: undefined });
+    (seedCatalogModule.ensureCatalogSeed as jest.Mock).mockImplementationOnce(() => {
+      throw new Error('fallo del catálogo');
+    });
+    await renderWithCatalogProbe();
+    expect(await screen.findByTestId('database-error-screen')).toBeTruthy();
+    expect(screen.queryByTestId('catalog-probe')).toBeNull();
   });
 });
