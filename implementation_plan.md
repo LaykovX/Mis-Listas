@@ -192,3 +192,25 @@ Salieron de las dos revisiones adversariales de la Fase 2. Ninguna bloquea esta 
 - **Reglas solo en el código (no en CHECK de la base):** formato de color `#RRGGBB`, que `lists.parent_tag_id` apunte a una etiqueta madre y que `list_site_tags.tag_id` apunte a una de sitio. Hoy las garantizan los repositorios; cualquier escritura nueva debe pasar por ellos.
 - **Límites de validación:** precio de 1 a 100.000.000 pesos; cantidad de 0,001 a 100.000; nombres de hasta 60 caracteres.
 - **Reutilización:** `sql.js` + `createTestDb` + `createSeededDb` (en `src/db/testing/`) son la base para probar cualquier consulta nueva.
+
+---
+
+## Notas de ejecución de la Fase 3 para las fases siguientes
+
+La lógica de precios vive en `src/logic/` (importar desde `@/logic`). Son funciones puras: no leen la base ni la pantalla.
+
+- **Fase 5 (listas): conectar la base con la lógica.** Las filas de la Fase 2 no encajan tal cual; hace falta una pequeña función de traspaso (fuera de `src/logic/`, que debe seguir siendo pura):
+  - `PriceRecordWithSites` (de `getPriceHistory`) ya sirve como `PricePoint`, sin conversión.
+  - `CatalogItem` → `ReferencePrice`: `{ price: referencePrice, defaultUnit }`.
+  - `ListItem` → `EstimateLineInput`: `itemId` es el `id`, `history` sale de `getPriceHistory(db, catalogItemId)` (sin filtros) y `reference` del ítem de la base.
+  - `EstimateContext`: `{ parentTagId, siteTagIds }` de la lista.
+- **Fase 5: errores por ítem.** Las funciones lanzan `RangeError` ante datos corruptos (por ejemplo, un registro de historial mal formado). Un solo ítem dañado haría fallar toda la estimación de la lista: la pantalla debe capturar el error por ítem y mostrar un aviso, sin dejar la lista en blanco.
+- **Fase 5: `list_items.unit_price`.** La estimación por defecto se recalcula siempre desde el historial y la referencia, y no lee `unit_price`. Hay que decidir qué hace esa columna: refrescarla al agregar un ítem, o dejar de usarla.
+- **Fase 5 y 6: mostrar la estimación.** `estimate.basisMismatch` indica que se usó una referencia expresada en otra base (por kilo contra por unidad): conviene avisar "revisa este precio". `estimate.source` (`site`, `parent`, `reference`) y `recordedDate` permiten explicar de dónde sale cada precio. REQ-07.6 (indicar que el total es una estimación) lo resuelve la pantalla.
+- **Fase 7: gráficas y comparativas.** `summarizeHistory(puntos, base)` entrega los puntos ordenados, la variación entre compras y el último precio; `roundPercent` formatea el porcentaje para mostrarlo. Un ítem puede tener historial por kilo y por unidad: se resumen por separado y la pantalla debe elegir la base (por defecto, la de la unidad habitual del ítem).
+- **Reglas de cálculo que la interfaz no debe contradecir:**
+  - Los subtotales se redondean al peso, con el .5 hacia arriba, y el total es la suma de subtotales ya redondeados.
+  - La cantidad se toma con hasta 6 decimales y un ítem de precio y cantidad mínimos puede valer 0 pesos.
+  - Todos los niveles de la estimación exigen la misma etiqueta madre; el nivel "sitio" además exige compartir una etiqueta de sitio.
+  - Los precios del historial de otra base (kilo o unidad) no se mezclan.
+- **Formato de fechas:** las funciones exigen fechas `AAAA-MM-DD` válidas (como las que guarda la Fase 2) e instantes ISO 8601; rechazan años 0000 a 0099, igual que la capa de datos.
