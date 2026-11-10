@@ -3,6 +3,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 import React from 'react';
 import { PaperProvider } from 'react-native-paper';
 
+import { DatabaseContextProvider } from '@/db/DatabaseProvider';
+import { createSeededDb, type SeededDb } from '@/db/testing/seededTestDb';
 import { SizeProvider } from '@/theme/SizeContext';
 import { ThemeModeProvider } from '@/theme/ThemeModeContext';
 import { SIZES } from '@/theme/sizes';
@@ -10,12 +12,16 @@ import { t } from '@/strings';
 
 import { SettingsScreen } from './SettingsScreen';
 
+let seeded: SeededDb;
+
 function renderScreen() {
   return render(
     <SizeProvider>
       <ThemeModeProvider>
         <PaperProvider>
-          <SettingsScreen />
+          <DatabaseContextProvider db={seeded.db}>
+            <SettingsScreen />
+          </DatabaseContextProvider>
         </PaperProvider>
       </ThemeModeProvider>
     </SizeProvider>,
@@ -24,6 +30,11 @@ function renderScreen() {
 
 beforeEach(async () => {
   await AsyncStorage.clear();
+  seeded = await createSeededDb();
+});
+
+afterEach(() => {
+  seeded.close();
 });
 
 describe('SettingsScreen', () => {
@@ -55,6 +66,12 @@ describe('SettingsScreen', () => {
     await waitFor(() =>
       expect(screen.getByTestId('settings-large-mode-switch').props.value).toBe(true),
     );
+  });
+
+  it('incluye la sección de base de datos con las etiquetas madre', async () => {
+    await renderScreen();
+    expect(await screen.findByTestId('settings-database-section')).toBeTruthy();
+    expect(screen.getByText(t.settings.databaseOk)).toBeTruthy();
   });
 
   it('muestra el tema automático seleccionado la primera vez', async () => {

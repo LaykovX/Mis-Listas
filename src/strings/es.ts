@@ -13,6 +13,15 @@ export const es = {
     catalogTitle: 'Aún no hay ítems',
     catalogHint: 'Aquí podrás buscar productos y ajustar sus precios de referencia.',
   },
+  tags: {
+    feria: 'Feria',
+    supermercado: 'Supermercado',
+  },
+  database: {
+    loading: 'Cargando tus datos…',
+    errorTitle: 'No se pudieron abrir tus datos',
+    errorHint: 'Cierra la app por completo y vuelve a abrirla. Si el problema sigue, no la desinstales: tus datos podrían recuperarse.',
+  },
   settings: {
     title: 'Ajustes',
     largeMode: 'Texto y botones grandes',
@@ -22,5 +31,12 @@ export const es = {
     themeSystem: 'Automático',
     themeLight: 'Claro',
     themeDark: 'Oscuro',
+    database: 'Base de datos',
+    databaseOk: 'Funcionando. Tus datos se guardan en este teléfono.',
+    databaseParentTags: 'Etiquetas madre',
+    databaseSiteTags: 'Etiquetas de sitio',
+    databaseLists: 'Listas',
+    databaseItems: 'Ítems en la base',
+    databasePrices: 'Precios registrados',
   },
 } as const;

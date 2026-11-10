@@ -6,6 +6,7 @@ import { useColorScheme } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { DatabaseProvider } from '@/db/DatabaseProvider';
 import { buildTheme } from '@/theme';
 import { SizeProvider, useSizes } from '@/theme/SizeContext';
 import { ThemeModeProvider, useThemeMode } from '@/theme/ThemeModeContext';
@@ -30,7 +31,9 @@ function ThemedApp() {
   return (
     <PaperProvider theme={theme}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false }} />
+      <DatabaseProvider>
+        <Stack screenOptions={{ headerShown: false }} />
+      </DatabaseProvider>
     </PaperProvider>
   );
 }

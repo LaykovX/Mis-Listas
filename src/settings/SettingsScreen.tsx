@@ -3,6 +3,7 @@ import { ScrollView, View } from 'react-native';
 import { List, SegmentedButtons, Switch, Text, useTheme } from 'react-native-paper';
 
 import { t } from '@/strings';
+import { DatabaseStatus } from './DatabaseStatus';
 import { useSizes } from '@/theme/SizeContext';
 import { scaleFontSize } from '@/theme/sizes';
 import { useThemeMode } from '@/theme/ThemeModeContext';
@@ -76,6 +77,8 @@ export function SettingsScreen() {
           ]}
         />
       </View>
+
+      <DatabaseStatus />
     </ScrollView>
   );
 }

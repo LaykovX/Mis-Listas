@@ -179,3 +179,16 @@ Un día cada tres meses:
 - La versión de Node: una vez al año o cuando se acerque su fin de soporte.
 - Herramientas de desarrollo (linters, formateadores): solo si bloquean algo.
 - Cuentas de tiendas: solo si se publica; renovar la cuota anual de Apple.
+
+---
+
+## Notas de ejecución de la Fase 2 para las fases siguientes
+
+Salieron de las dos revisiones adversariales de la Fase 2. Ninguna bloquea esta fase.
+
+- **Fase 6 (comprar y registrar precios):** hoy `recordPrice` registra un precio contra una lista y un ítem de la base, pero no exige que el ítem esté en esa lista, y ninguna función marca `is_purchased` / `purchased_price` de un ítem de lista. Hace falta una operación atómica "marcar comprado y registrar el precio" (una transacción) que valide que el ítem pertenece a la lista.
+- **Fase 3 y posteriores (migraciones):** `PRAGMA foreign_keys = ON` se activa antes de migrar. Una migración futura que reconstruya una tabla de SQLite necesitará un manejo especial de las claves foráneas, y SQLite ignora `foreign_keys = OFF` dentro de la transacción de la migración. Planificarlo antes de la primera migración que reconstruya tablas.
+- **Pantalla de error de base de datos:** no tiene botón "Reintentar"; ante un fallo al abrir la base hay que reiniciar la app. El cliente ya permite reintentar (no guarda la conexión si falla), solo falta la acción en la interfaz.
+- **Reglas solo en el código (no en CHECK de la base):** formato de color `#RRGGBB`, que `lists.parent_tag_id` apunte a una etiqueta madre y que `list_site_tags.tag_id` apunte a una de sitio. Hoy las garantizan los repositorios; cualquier escritura nueva debe pasar por ellos.
+- **Límites de validación:** precio de 1 a 100.000.000 pesos; cantidad de 0,001 a 100.000; nombres de hasta 60 caracteres.
+- **Reutilización:** `sql.js` + `createTestDb` + `createSeededDb` (en `src/db/testing/`) son la base para probar cualquier consulta nueva.
